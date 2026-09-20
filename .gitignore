@@ -1,0 +1,118 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+.windows
+.env.production.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Node (si agregan frontend con npm)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Model files (YOLOv8)
+models/
+runs/
+*.pt
+*.onnx
+
+# Vercel
+.vercel/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.#*
+
+# Private keys
+*.pem
+*.key
+secrets/
+
+# Uploads
+uploads/
+temp/
+
+# Database backups
+*.sql
+*.db.backup
+
+# Compiled
+*.pyc
+*.pyo
+
+# Guías internas de desarrollo (No subir a Git)
+GUIA_COMMITS_PAREJA.md
+IMPLEMENTACION_PASO_A_PASO.md
+INDICE_ARCHIVOS_PROYECTO.md
+RESUMEN_PROYECTO_COMPLETO.md
+TESTING_ENDPOINTS.md
+ESTRUCTURA_PROYECTO.txt
+backend_*.py
+django_*.py
+js_*.js
+template_*.html

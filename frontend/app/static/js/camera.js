@@ -2,15 +2,35 @@
 
 let stream = null;
 let isCapturing = false;
+let faceDetectionInterval = null;
+let modelsLoaded = false;
 
 /**
- * Inicia la captura de la cámara usando getUserMedia
+ * Carga diferida de los modelos de detección para no bloquear la cámara
+ */
+async function loadFaceModels() {
+    if (modelsLoaded) return true;
+    try {
+        if (typeof faceapi !== 'undefined') {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
+            modelsLoaded = true;
+            addLog('🧠 Modelos de detección listos');
+            return true;
+        }
+    } catch (err) {
+        addLog(`⚠️ No se pudieron cargar los modelos locales: ${err.message}`);
+    }
+    return false;
+}
+
+/**
+ * Encender cámara de forma inmediata
  */
 async function startCamera() {
     try {
-        addLog('🎬 Solicitando acceso a cámara...');
-        
-        // Solicitar acceso a cámara
+        addLog('🎬 Solicitando acceso a la cámara...');
+
+        // 1. Obtener acceso al hardware de la cámara
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 width: { ideal: 1280 },
@@ -20,104 +40,178 @@ async function startCamera() {
             audio: false
         });
         
-        // Mostrar video en elemento <video>
         const video = document.getElementById('video');
         video.srcObject = stream;
         
-        // Actualizar estado de botones
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-        document.getElementById('captureBtn').disabled = false;
-        
-        isCapturing = true;
-        addLog('✅ Cámara iniciada correctamente');
-        
+        video.onloadedmetadata = async () => {
+            try {
+                await video.play();
+            } catch (e) {
+                console.warn('Auto-play intervenido por el navegador:', e);
+            }
+
+            isCapturing = true;
+            
+            // Actualizar botones de la interfaz
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('captureBtn').disabled = false;
+            
+            addLog('✅ Cámara encendida con éxito');
+
+            // Cargar modelos en segundo plano e iniciar seguimiento
+            loadFaceModels().then(() => {
+                startLiveFaceTracking();
+            });
+        };
+
     } catch (error) {
-        addLog(`❌ Error de cámara: ${error.message}`);
-        
-        if (error.name === 'NotAllowedError') {
-            showMessage('Permiso denegado para acceder a la cámara', 'error');
-        } else if (error.name === 'NotFoundError') {
-            showMessage('No se encontró una cámara disponible', 'error');
-        } else {
-            showMessage(`Error: ${error.message}`, 'error');
+        addLog(`❌ Error en la cámara: ${error.message}`);
+        if (typeof showMessage === 'function') {
+            showMessage(`Error al acceder a la cámara: ${error.message}`, 'error');
         }
     }
 }
 
 /**
- * Detiene la captura de la cámara
+ * Detección de rostros y actualización del contador en vivo
+ */
+function startLiveFaceTracking() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (faceDetectionInterval) clearInterval(faceDetectionInterval);
+
+    faceDetectionInterval = setInterval(async () => {
+        if (!isCapturing || video.paused || video.ended) return;
+
+        // Sincronizar dimensiones del canvas con el video
+        if (video.videoWidth && video.videoHeight) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (typeof faceapi !== 'undefined' && modelsLoaded) {
+            try {
+                const detections = await faceapi.detectAllFaces(
+                    video, 
+                    new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 224,
+                        scoreThreshold: 0.5
+                    })
+                );
+                
+                // Dibujar recuadros en canvas
+                ctx.strokeStyle = '#00FF00';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillStyle = '#00FF00';
+
+                detections.forEach(detection => {
+                    const { x, y, width, height } = detection.box;
+                    ctx.strokeRect(x, y, width, height);
+                    ctx.fillText('Rostro', x, y > 15 ? y - 8 : 15);
+                });
+
+                // Actualizar número en pantalla
+                const countDisplay = document.getElementById('peopleCount');
+                if (countDisplay) {
+                    countDisplay.textContent = detections.length;
+                }
+            } catch (err) {
+                console.error("Error en ciclo de detección:", err);
+            }
+        }
+    }, 100);
+}
+
+/**
+ * Detener la cámara y reiniciar el lienzo
  */
 function stopCamera() {
     try {
-        // Detener stream
+        isCapturing = false;
+
+        if (faceDetectionInterval) {
+            clearInterval(faceDetectionInterval);
+            faceDetectionInterval = null;
+        }
+
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
         }
         
-        // Limpiar video
         const video = document.getElementById('video');
-        video.srcObject = null;
+        if (video) video.srcObject = null;
         
-        // Actualizar botones
+        const canvas = document.getElementById('canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
         document.getElementById('captureBtn').disabled = true;
         
-        isCapturing = false;
         addLog('🛑 Cámara detenida');
-        
     } catch (error) {
-        addLog(`Error deteniendo cámara: ${error.message}`);
+        addLog(`Error al detener: ${error.message}`);
     }
 }
 
 /**
- * Captura un frame del video y lo envía a FastAPI
+ * Capturar foto para el backend (FastAPI)
  */
 async function captureFrame() {
     if (!isCapturing || !stream) {
-        showMessage('La cámara no está activa', 'error');
+        if (typeof showMessage === 'function') {
+            showMessage('La cámara no está activa', 'error');
+        }
         return;
     }
     
     try {
         const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
         
-        // Configurar canvas con dimensiones del video
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
         
-        // Dibujar video en canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
         
-        // Convertir a blob
-        canvas.toBlob(async (blob) => {
-            await sendToAPI(blob);
+        addLog('📸 Captura manual realizada. Enviando al servidor...');
+
+        tempCanvas.toBlob(async (blob) => {
+            if (blob) {
+                await sendToAPI(blob);
+            }
         }, 'image/jpeg', 0.95);
         
     } catch (error) {
-        addLog(`❌ Error capturando frame: ${error.message}`);
-        showMessage(`Error: ${error.message}`, 'error');
+        addLog(`❌ Error capturando: ${error.message}`);
     }
 }
 
 /**
- * Envía la imagen al servidor Django/FastAPI
+ * Envío del fotograma a FastAPI
  */
 async function sendToAPI(blob) {
+    const captureBtn = document.getElementById('captureBtn');
+    
     try {
-        // Crear FormData
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
         formData.append('establishment_id', 'default');
         
-        // Mostrar que está procesando
-        document.getElementById('captureBtn').disabled = true;
-        addLog('📤 Enviando imagen a FastAPI...');
+        if (captureBtn) captureBtn.disabled = true;
         
         const response = await fetch('/api/count-people/', {
             method: 'POST',
@@ -127,32 +221,28 @@ async function sendToAPI(blob) {
             }
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const result = await response.json();
         
         if (result.error) {
-            addLog(`❌ Error: ${result.error}`);
-            showMessage(`Error: ${result.error}`, 'error');
+            addLog(`❌ Error API: ${result.error}`);
         } else {
-            addLog(`✅ Respuesta recibida: ${result.people_count} personas detectadas`);
-            updateUI(result);
+            addLog(`✅ Análisis API completado: ${result.people_count} persona(s)`);
+            if (typeof updateUI === 'function') {
+                updateUI(result);
+            }
         }
         
     } catch (error) {
-        addLog(`❌ Error enviando a API: ${error.message}`);
-        showMessage(`Error de conexión: ${error.message}`, 'error');
-        
+        addLog(`❌ Conexión fallida: ${error.message}`);
     } finally {
-        document.getElementById('captureBtn').disabled = false;
+        if (captureBtn && isCapturing) {
+            captureBtn.disabled = false;
+        }
     }
 }
 
-/**
- * Obtener CSRF token de cookie
- */
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -166,28 +256,4 @@ function getCookie(name) {
         }
     }
     return cookieValue;
-}
-
-/**
- * Auto-captura cada N segundos (opcional)
- */
-let autoCaptureInterval = null;
-
-function startAutoCapture(intervalSeconds = 5) {
-    if (autoCaptureInterval) return;
-    
-    addLog(`🔄 Auto-captura activada cada ${intervalSeconds}s`);
-    autoCaptureInterval = setInterval(() => {
-        if (isCapturing) {
-            captureFrame();
-        }
-    }, intervalSeconds * 1000);
-}
-
-function stopAutoCapture() {
-    if (autoCaptureInterval) {
-        clearInterval(autoCaptureInterval);
-        autoCaptureInterval = null;
-        addLog('⏸️ Auto-captura desactivada');
-    }
 }

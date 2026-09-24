@@ -1,14 +1,30 @@
 /* frontend/app/static/css/style.css */
 
-/* === Variables globales === */
+/* === Variables globales (Fondo Morado Pastel & Detalles Rosa Cereza) === */
 :root {
-    --ok-color: #28a745;
-    --warning-color: #ffc107;
-    --critical-color: #dc3545;
-    --primary-color: #007bff;
-    --dark-bg: #1a1a2e;
-    --card-bg: #16213e;
-    --text-light: #e0e0e0;
+    --bg-main: #f3ecf8;          /* Fondo principal morado pastel suave / lavanda */
+    --card-bg: #ffffff;          /* Tarjetas blancas nitidas */
+    --card-border: #e3d3ed;      /* Borde morado pastel delicado */
+    
+    --accent-purple: #7b5294;    /* Morado medio suave para títulos e íconos */
+    --accent-pink: #d97793;      /* Rosa cereza pastel para enlaces y detalles destacados */
+    --accent-soft: #f8f1fb;      /* Fondo ultra suave para inputs y contenedores de log */
+    
+    --btn-primary-bg: #8c5fa8;   /* Botón principal morado lavanda vibrante */
+    --btn-primary-hover:#794f94;  /* Hover ligeramente más profundo */
+    
+    --text-main: #33223f;        /* Texto principal morado profundo legible */
+    --text-muted: #887299;       /* Texto secundario suave */
+    
+    /* Estados en Tonos Pasteles Claros */
+    --ok-color: #d4f0f0;         /* Menta pastel */
+    --ok-text: #1b5e5e;
+    
+    --warning-color: #ffe5d9;    /* Melocotón pastel */
+    --warning-text: #7c4021;
+    
+    --critical-color: #fec8d8;   /* Rosa cálido pastel */
+    --critical-text: #82223b;
 }
 
 /* === Reset básico === */
@@ -19,9 +35,9 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--dark-bg);
-    color: var(--text-light);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
     min-height: 100vh;
 }
 
@@ -32,122 +48,181 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #0f3460;
+    border-bottom: 1.5px solid var(--card-border);
+    box-shadow: 0 4px 16px rgba(123, 82, 148, 0.06);
 }
 
 .navbar-brand {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-purple);
     text-decoration: none;
+    letter-spacing: 0.5px;
+}
+
+.navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.navbar-nav span {
+    color: var(--text-muted);
 }
 
 .navbar-nav a {
-    color: var(--text-light);
+    color: var(--text-main);
     text-decoration: none;
-    margin-left: 1.5rem;
-    transition: color 0.3s;
+    font-weight: 600;
+    transition: color 0.2s ease;
 }
 
 .navbar-nav a:hover {
-    color: var(--primary-color);
+    color: var(--accent-pink);
 }
 
 /* === Cards === */
 .card {
     background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 1.5rem;
+    border-radius: 20px;
+    padding: 1.8rem;
     margin-bottom: 1.5rem;
-    border: 1px solid #0f3460;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1.5px solid var(--card-border);
+    box-shadow: 0 8px 24px rgba(123, 82, 148, 0.06);
 }
 
 .card-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    color: var(--primary-color);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    color: var(--accent-purple);
 }
 
 /* === Botones === */
 .btn {
-    padding: 0.5rem 1.2rem;
+    padding: 0.65rem 1.4rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 0.95rem;
-    transition: all 0.3s;
-    font-weight: 500;
+    font-weight: 600;
+    transition: all 0.25s ease;
 }
 
-.btn-primary { background-color: var(--primary-color); color: white; }
-.btn-danger  { background-color: var(--critical-color); color: white; }
-.btn-success { background-color: var(--ok-color); color: white; }
-.btn-warning { background-color: var(--warning-color); color: #333; }
+.btn-primary { 
+    background-color: var(--btn-primary-bg); 
+    color: #ffffff; 
+}
 
-.btn:hover   { opacity: 0.85; transform: translateY(-1px); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover);
+    box-shadow: 0 4px 12px rgba(140, 95, 168, 0.25);
+}
+
+.btn-danger { 
+    background-color: var(--critical-color); 
+    color: var(--critical-text); 
+}
+
+.btn-success { 
+    background-color: var(--ok-color); 
+    color: var(--ok-text); 
+}
+
+.btn-warning { 
+    background-color: var(--warning-color); 
+    color: var(--warning-text); 
+}
+
+.btn:hover { 
+    transform: translateY(-2px); 
+}
+
+.btn:disabled { 
+    opacity: 0.45; 
+    cursor: not-allowed; 
+    transform: none; 
+    box-shadow: none;
+}
 
 /* === Estado de aforo === */
 .status-badge {
     display: inline-block;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 1rem;
+    padding: 0.4rem 1.2rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
 }
 
-.status-ok       { background-color: var(--ok-color);       color: white; }
-.status-warning  { background-color: var(--warning-color);  color: #333;  }
-.status-critical { background-color: var(--critical-color); color: white; }
+.status-ok       { background-color: var(--ok-color);       color: var(--ok-text); }
+.status-warning  { background-color: var(--warning-color);  color: var(--warning-text); }
+.status-critical { background-color: var(--critical-color); color: var(--critical-text); }
 
-/* === Video / Cámara === */
+/* === Video / Cámara Superpuesta === */
+.camera-container {
+    position: relative;
+    width: 100%;
+    background: #1f1826;
+    border-radius: 18px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border: 2px solid var(--card-border);
+}
+
 #video {
     width: 100%;
-    border-radius: 8px;
-    background: #000;
-    max-height: 400px;
+    height: 100%;
     object-fit: cover;
+    display: block;
 }
 
-#canvas { display: none; }
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+}
 
 /* === Log de eventos === */
-#log-container {
-    background-color: #0a0a1a;
-    border-radius: 8px;
+#log-container, .log-area {
+    background-color: var(--accent-soft);
+    border-radius: 12px;
     padding: 1rem;
-    height: 200px;
+    height: 180px;
     overflow-y: auto;
-    font-family: monospace;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 0.85rem;
-    border: 1px solid #0f3460;
+    border: 1.5px solid var(--card-border);
+    margin-top: 1rem;
 }
 
 .log-entry {
-    padding: 0.2rem 0;
-    border-bottom: 1px solid #0f3460;
-    color: #a0a0b0;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(123, 82, 148, 0.08);
+    color: var(--text-main);
 }
 
-/* === Login Form === */
+/* === Login / Register Cards === */
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: var(--dark-bg);
+    background-color: var(--bg-main);
 }
 
 .login-card {
     background-color: var(--card-bg);
-    border-radius: 12px;
+    border-radius: 24px;
     padding: 2.5rem;
     width: 100%;
     max-width: 420px;
-    border: 1px solid #0f3460;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--card-border);
+    box-shadow: 0 12px 32px rgba(123, 82, 148, 0.1);
 }
 
 .form-group {
@@ -156,64 +231,69 @@ body {
 
 .form-group label {
     display: block;
-    margin-bottom: 0.4rem;
-    color: #a0a0c0;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .form-control {
     width: 100%;
-    padding: 0.7rem 1rem;
-    background-color: #0a0a1a;
-    border: 1px solid #0f3460;
-    border-radius: 6px;
-    color: var(--text-light);
-    font-size: 1rem;
-    transition: border-color 0.3s;
+    padding: 0.75rem 1rem;
+    background-color: var(--accent-soft);
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
 }
 
 .form-control:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent-purple);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(140, 95, 168, 0.15);
 }
 
 /* === Alertas === */
 .alert {
     padding: 0.8rem 1.2rem;
-    border-radius: 6px;
+    border-radius: 12px;
     margin-bottom: 1rem;
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
-.alert-error   { background-color: rgba(220, 53, 69, 0.2);  border: 1px solid var(--critical-color); color: #ff6b7a; }
-.alert-success { background-color: rgba(40, 167, 69, 0.2);  border: 1px solid var(--ok-color);       color: #5dd879; }
-.alert-warning { background-color: rgba(255, 193, 7, 0.2);  border: 1px solid var(--warning-color);  color: #ffd54f; }
+.alert-error   { background-color: var(--critical-color); color: var(--critical-text); }
+.alert-success { background-color: var(--ok-color);       color: var(--ok-text); }
+.alert-warning { background-color: var(--warning-color);  color: var(--warning-text); }
 
 /* === Contador grande === */
 .count-display {
-    font-size: 4rem;
-    font-weight: bold;
+    font-size: 4.8rem;
+    font-weight: 800;
     text-align: center;
     line-height: 1;
+    color: var(--accent-purple);
 }
 
 .count-label {
     text-align: center;
-    color: #a0a0b0;
-    font-size: 0.9rem;
-    margin-top: 0.3rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
 }
 
 /* === Grid layout === */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    max-width: 1200px;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1.8rem;
+    padding: 2rem;
+    max-width: 1280px;
     margin: 0 auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 850px) {
     .dashboard-grid { grid-template-columns: 1fr; }
 }

@@ -1,0 +1,219 @@
+/* frontend/app/static/css/style.css */
+
+/* === Variables globales === */
+:root {
+    --ok-color: #28a745;
+    --warning-color: #ffc107;
+    --critical-color: #dc3545;
+    --primary-color: #007bff;
+    --dark-bg: #1a1a2e;
+    --card-bg: #16213e;
+    --text-light: #e0e0e0;
+}
+
+/* === Reset básico === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    min-height: 100vh;
+}
+
+/* === Navbar === */
+.navbar {
+    background-color: var(--card-bg);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #0f3460;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.navbar-nav a {
+    color: var(--text-light);
+    text-decoration: none;
+    margin-left: 1.5rem;
+    transition: color 0.3s;
+}
+
+.navbar-nav a:hover {
+    color: var(--primary-color);
+}
+
+/* === Cards === */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #0f3460;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+/* === Botones === */
+.btn {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-danger  { background-color: var(--critical-color); color: white; }
+.btn-success { background-color: var(--ok-color); color: white; }
+.btn-warning { background-color: var(--warning-color); color: #333; }
+
+.btn:hover   { opacity: 0.85; transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* === Estado de aforo === */
+.status-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.status-ok       { background-color: var(--ok-color);       color: white; }
+.status-warning  { background-color: var(--warning-color);  color: #333;  }
+.status-critical { background-color: var(--critical-color); color: white; }
+
+/* === Video / Cámara === */
+#video {
+    width: 100%;
+    border-radius: 8px;
+    background: #000;
+    max-height: 400px;
+    object-fit: cover;
+}
+
+#canvas { display: none; }
+
+/* === Log de eventos === */
+#log-container {
+    background-color: #0a0a1a;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    border: 1px solid #0f3460;
+}
+
+.log-entry {
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #0f3460;
+    color: #a0a0b0;
+}
+
+/* === Login Form === */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--dark-bg);
+}
+
+.login-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid #0f3460;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #a0a0c0;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background-color: #0a0a1a;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    color: var(--text-light);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* === Alertas === */
+.alert {
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-error   { background-color: rgba(220, 53, 69, 0.2);  border: 1px solid var(--critical-color); color: #ff6b7a; }
+.alert-success { background-color: rgba(40, 167, 69, 0.2);  border: 1px solid var(--ok-color);       color: #5dd879; }
+.alert-warning { background-color: rgba(255, 193, 7, 0.2);  border: 1px solid var(--warning-color);  color: #ffd54f; }
+
+/* === Contador grande === */
+.count-display {
+    font-size: 4rem;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+}
+
+.count-label {
+    text-align: center;
+    color: #a0a0b0;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+}
+
+/* === Grid layout === */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+}

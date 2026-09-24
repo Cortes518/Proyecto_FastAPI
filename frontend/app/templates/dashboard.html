@@ -1,0 +1,462 @@
+{# frontend/app/templates/dashboard.html #}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Control de Aforo</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 24px;
+        }
+        
+        .navbar-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .navbar-right a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .navbar-right a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        /* Camera Section */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+        }
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        /* Stats Section */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-box.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-box.critical {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff0000 100%);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .status-ok {
+            background: #4caf50;
+        }
+        
+        .status-warning {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-critical {
+            background: #f44336;
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Settings Section */
+        .threshold-control {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .threshold-control label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .threshold-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .threshold-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .threshold-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .log-area {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🎯 Control de Aforo en Tiempo Real</h1>
+        <div class="navbar-right">
+            <span>Bienvenido, {{ user.username }}</span>
+            <a href="{% url 'settings' %}">⚙️ Configuración</a>
+            <a href="{% url 'logout' %}">Cerrar Sesión</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Panel de Cámara -->
+        <div class="card">
+            <h2>📹 Captura de Cámara</h2>
+            
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+            </div>
+            
+            <div class="camera-controls">
+                <button class="btn btn-primary" id="startBtn" onclick="startCamera()">
+                    Iniciar Cámara
+                </button>
+                <button class="btn btn-secondary" id="stopBtn" onclick="stopCamera()" disabled>
+                    Detener
+                </button>
+                <button class="btn btn-primary" id="captureBtn" onclick="captureFrame()" disabled>
+                    📸 Capturar Foto
+                </button>
+            </div>
+            
+            <div class="log-area" id="logArea">
+                Esperando acciones...
+            </div>
+        </div>
+        
+        <!-- Panel de Estadísticas -->
+        <div class="card">
+            <h2>📊 Estadísticas</h2>
+            
+            <div id="messageContainer"></div>
+            
+            <div class="stats">
+                <div class="stat-box" id="peopleBox">
+                    <div class="stat-label">Personas Detectadas</div>
+                    <div class="stat-value" id="peopleCount">0</div>
+                </div>
+                <div class="stat-box" id="capacityBox">
+                    <div class="stat-label">Límite Permitido</div>
+                    <div class="stat-value" id="maxAllowed">-</div>
+                </div>
+            </div>
+            
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="color: #555; font-weight: 500;">Estado: </span>
+                    <span id="statusText" style="font-weight: bold;">Esperando captura...</span>
+                    <span class="status-indicator" id="statusIndicator"></span>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 5px; font-size: 12px; color: #666;">
+                    <strong>Última captura:</strong> <span id="lastCapture">-</span>
+                </div>
+            </div>
+            
+            <!-- Control de Threshold -->
+            <div class="threshold-control">
+                <label for="thresholdInput">⚙️ Actualizar Límite de Aforo</label>
+                <div class="threshold-input-group">
+                    <input 
+                        type="number" 
+                        id="thresholdInput" 
+                        min="1" 
+                        max="100" 
+                        placeholder="Límite máximo"
+                    >
+                    <button class="btn btn-primary" onclick="updateThreshold()">
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 12px; color: #999;">
+                🔄 Actualiza en tiempo real cada captura
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/camera.js' %}"></script>
+    <script src="{% static 'js/api.js' %}"></script>
+    <script>
+        // Variables globales
+        let lastResult = null;
+        
+        // Log helper
+        function addLog(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString('es-CO');
+            logArea.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        // Mostrar mensaje
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `
+                <div class="message ${type}">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Actualizar UI con resultados
+        function updateUI(result) {
+            lastResult = result;
+            
+            document.getElementById('peopleCount').textContent = result.people_count;
+            document.getElementById('maxAllowed').textContent = result.max_allowed;
+            document.getElementById('lastCapture').textContent = new Date(result.timestamp).toLocaleString('es-CO');
+            
+            // Actualizar estado visual
+            const status = result.status;
+            const statusText = document.getElementById('statusText');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const peopleBox = document.getElementById('peopleBox');
+            const capacityBox = document.getElementById('capacityBox');
+            
+            peopleBox.className = 'stat-box ' + (status === 'OK' ? '' : status === 'WARNING' ? 'warning' : 'critical');
+            
+            statusIndicator.className = 'status-indicator status-' + status.toLowerCase();
+            statusText.textContent = `Estado: ${status}`;
+            statusText.className = 'status-' + status.toLowerCase();
+            
+            const percentage = Math.round((result.people_count / result.max_allowed) * 100);
+            
+            if (status === 'CRITICAL') {
+                addLog(`⚠️ CRÍTICO: ${result.people_count}/${result.max_allowed} (${percentage}%)`);
+                showMessage('⚠️ ¡LÍMITE SUPERADO! El aforo está al máximo', 'error');
+            } else if (status === 'WARNING') {
+                addLog(`⚡ ADVERTENCIA: ${result.people_count}/${result.max_allowed} (${percentage}%)`);
+                showMessage('⚡ Advertencia: Aproximándose al límite', 'error');
+            } else {
+                addLog(`✅ OK: ${result.people_count}/${result.max_allowed} (${percentage}%)`);
+                showMessage(`✅ Aforo normal: ${result.people_count}/${result.max_allowed}`, 'success');
+            }
+        }
+        
+        // Cargar threshold actual al iniciar
+        async function loadCurrentThreshold() {
+            try {
+                const response = await fetch('{% url "get_thresholds" %}');
+                const data = await response.json();
+                if (data.thresholds && data.thresholds.length > 0) {
+                    document.getElementById('thresholdInput').value = data.thresholds[0].max_allowed;
+                    document.getElementById('maxAllowed').textContent = data.thresholds[0].max_allowed;
+                }
+            } catch (error) {
+                console.error('Error cargando threshold:', error);
+            }
+        }
+        
+        // Inicializar
+        window.addEventListener('load', () => {
+            addLog('Dashboard cargado');
+            loadCurrentThreshold();
+        });
+    </script>
+</body>
+</html>

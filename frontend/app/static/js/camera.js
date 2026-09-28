@@ -4,6 +4,16 @@ let stream = null;
 let isCapturing = false;
 let faceDetectionInterval = null;
 let modelsLoaded = false;
+let lastExceeded = null; // último estado de aforo (para no repetir logs)
+
+// IDs de los elementos del dashboard (ajústalos si en tu HTML se llaman distinto)
+const IDS = {
+    video: 'video',
+    canvas: 'canvas',
+    peopleCount: 'peopleCount',
+    maxAllowed: 'maxAllowed',
+    status: 'statusBadge'
+};
 
 /**
  * Carga diferida de los modelos de detección para no bloquear la cámara
@@ -39,10 +49,10 @@ async function startCamera() {
             },
             audio: false
         });
-        
-        const video = document.getElementById('video');
+
+        const video = document.getElementById(IDS.video);
         video.srcObject = stream;
-        
+
         video.onloadedmetadata = async () => {
             try {
                 await video.play();
@@ -51,12 +61,12 @@ async function startCamera() {
             }
 
             isCapturing = true;
-            
+
             // Actualizar botones de la interfaz
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
             document.getElementById('captureBtn').disabled = false;
-            
+
             addLog('✅ Cámara encendida con éxito');
 
             // Cargar modelos en segundo plano e iniciar seguimiento
@@ -74,11 +84,65 @@ async function startCamera() {
 }
 
 /**
+ * Lee el límite de aforo que se muestra en pantalla
+ */
+function getCurrentLimit() {
+    const el = document.getElementById(IDS.maxAllowed);
+    if (!el) return NaN;
+    return parseInt(el.textContent, 10);
+}
+
+/**
+ * Compara el conteo en vivo con el límite y actualiza el estado en pantalla
+ */
+// Suavizado: toma el máximo de las últimas lecturas para evitar parpadeos
+// cuando el detector pierde un rostro por un instante (8 lecturas ≈ 0.8 s)
+const recentCounts = [];
+const SMOOTHING_FRAMES = 8;
+
+function smoothCount(count) {
+    recentCounts.push(count);
+    if (recentCounts.length > SMOOTHING_FRAMES) recentCounts.shift();
+    return Math.max(...recentCounts);
+}
+
+function updateLiveStatus(rawCount, limit) {
+    const count = smoothCount(rawCount);
+
+    // OK: por debajo del límite | WARNING: justo en el límite | CRITICAL: excedido
+    let level, text, cssClass;
+    if (count > limit) {
+        level = 'CRITICAL'; text = 'CRITICAL'; cssClass = 'status-badge status-critical';
+    } else if (count === limit) {
+        level = 'WARNING'; text = 'WARNING'; cssClass = 'status-badge status-warning';
+    } else {
+        level = 'OK'; text = 'OK'; cssClass = 'status-badge status-ok';
+    }
+
+    const statusEl = document.getElementById(IDS.status);
+    if (statusEl) {
+        statusEl.textContent = text;
+        statusEl.className = cssClass;
+    }
+
+    // Solo registrar en el log cuando cambia el estado, no en cada lectura
+    if (level !== lastExceeded) {
+        const msgs = {
+            CRITICAL: `🚨 Aforo excedido: ${count} > ${limit}`,
+            WARNING: `⚠️ Aforo en el límite: ${count} = ${limit}`,
+            OK: `✅ Aforo dentro del límite: ${count} < ${limit}`
+        };
+        addLog(msgs[level]);
+        lastExceeded = level;
+    }
+}
+
+/**
  * Detección de rostros y actualización del contador en vivo
  */
 function startLiveFaceTracking() {
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
+    const video = document.getElementById(IDS.video);
+    const canvas = document.getElementById(IDS.canvas);
     if (!video || !canvas) return;
 
     const ctx = canvas.getContext('2d');
@@ -99,13 +163,13 @@ function startLiveFaceTracking() {
         if (typeof faceapi !== 'undefined' && modelsLoaded) {
             try {
                 const detections = await faceapi.detectAllFaces(
-                    video, 
+                    video,
                     new faceapi.TinyFaceDetectorOptions({
-                        inputSize: 224,
-                        scoreThreshold: 0.5
+                        inputSize: 320,       // más grande = detecta rostros pequeños
+                        scoreThreshold: 0.4   // más bajo = más sensible
                     })
                 );
-                
+
                 // Dibujar recuadros en canvas
                 ctx.strokeStyle = '#00FF00';
                 ctx.lineWidth = 3;
@@ -119,9 +183,16 @@ function startLiveFaceTracking() {
                 });
 
                 // Actualizar número en pantalla
-                const countDisplay = document.getElementById('peopleCount');
+                const count = detections.length;
+                const countDisplay = document.getElementById(IDS.peopleCount);
                 if (countDisplay) {
-                    countDisplay.textContent = detections.length;
+                    countDisplay.textContent = count;
+                }
+
+                // Comparar contra el límite de aforo en cada ciclo
+                const limit = getCurrentLimit();
+                if (!isNaN(limit)) {
+                    updateLiveStatus(count, limit);
                 }
             } catch (err) {
                 console.error("Error en ciclo de detección:", err);
@@ -146,20 +217,29 @@ function stopCamera() {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
         }
-        
-        const video = document.getElementById('video');
+
+        const video = document.getElementById(IDS.video);
         if (video) video.srcObject = null;
-        
-        const canvas = document.getElementById('canvas');
+
+        const canvas = document.getElementById(IDS.canvas);
         if (canvas) {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
+        // Reiniciar estado del aforo
+        lastExceeded = null;
+        recentCounts.length = 0;
+        const statusEl = document.getElementById(IDS.status);
+        if (statusEl) {
+            statusEl.textContent = 'OK';
+            statusEl.className = 'status-badge status-ok';
+        }
+
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
         document.getElementById('captureBtn').disabled = true;
-        
+
         addLog('🛑 Cámara detenida');
     } catch (error) {
         addLog(`Error al detener: ${error.message}`);
@@ -176,17 +256,17 @@ async function captureFrame() {
         }
         return;
     }
-    
+
     try {
-        const video = document.getElementById('video');
-        
+        const video = document.getElementById(IDS.video);
+
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = video.videoWidth;
         tempCanvas.height = video.videoHeight;
-        
+
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-        
+
         addLog('📸 Captura manual realizada. Enviando al servidor...');
 
         tempCanvas.toBlob(async (blob) => {
@@ -194,7 +274,7 @@ async function captureFrame() {
                 await sendToAPI(blob);
             }
         }, 'image/jpeg', 0.95);
-        
+
     } catch (error) {
         addLog(`❌ Error capturando: ${error.message}`);
     }
@@ -205,14 +285,14 @@ async function captureFrame() {
  */
 async function sendToAPI(blob) {
     const captureBtn = document.getElementById('captureBtn');
-    
+
     try {
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
         formData.append('establishment_id', 'default');
-        
+
         if (captureBtn) captureBtn.disabled = true;
-        
+
         const response = await fetch('/api/count-people/', {
             method: 'POST',
             body: formData,
@@ -220,11 +300,11 @@ async function sendToAPI(blob) {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         });
-        
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
+
         const result = await response.json();
-        
+
         if (result.error) {
             addLog(`❌ Error API: ${result.error}`);
         } else {
@@ -233,7 +313,7 @@ async function sendToAPI(blob) {
                 updateUI(result);
             }
         }
-        
+
     } catch (error) {
         addLog(`❌ Conexión fallida: ${error.message}`);
     } finally {

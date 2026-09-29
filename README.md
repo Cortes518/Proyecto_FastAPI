@@ -1,5 +1,10 @@
 # 🎯 Sistema de Control de Aforo y Distanciamiento con YOLOv8
 
+## Desplegado
+
+Backend: https://aforo-fastapi-backend.onrender.com/
+Frontend: https://aforo-django-frontend.onrender.com/
+
 Aplicación web para monitoreo de ocupación en tiempo real usando detección de personas con YOLOv8-nano. Desarrollada con **FastAPI** (backend) y **Django** (frontend), deployable en Vercel.
 
 ---
@@ -20,6 +25,7 @@ Aplicación web para monitoreo de ocupación en tiempo real usando detección de
 ## 🛠️ Stack Tecnológico
 
 **Backend**:
+
 - FastAPI 0.104+
 - YOLOv8-nano (Ultralytics)
 - SQLite / PostgreSQL

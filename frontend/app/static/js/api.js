@@ -27,7 +27,14 @@ async function updateThreshold() {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            let errorText = `HTTP ${response.status}`;
+            try {
+                const errData = await response.json();
+                if (errData.error) {
+                    errorText = errData.error;
+                }
+            } catch (e) {}
+            throw new Error(errorText);
         }
         
         const result = await response.json();

@@ -116,7 +116,7 @@ def count_people(request):
         # Llamar a FastAPI
         fastapi_url = f"{settings.FASTAPI_URL}/api/v1/count-people"
         logger.info(f"Sending to FastAPI: {fastapi_url}")
-        response = requests.post(fastapi_url, files=files, data=data, timeout=30)
+        response = requests.post(fastapi_url, files=files, data=data, timeout=45)
         
         logger.info(f"FastAPI Status: {response.status_code}")
         logger.info(f"FastAPI Response: {response.text}")
@@ -124,16 +124,18 @@ def count_people(request):
         if response.status_code == 200:
             return JsonResponse(response.json())
         else:
-            logger.error(f"FastAPI error: {response.text}")
+            logger.error(f"FastAPI error ({fastapi_url}): {response.text}")
             return JsonResponse({
-                'error': 'Error en el servidor FastAPI',
+                'error': f'Error en FastAPI ({response.status_code})',
                 'details': response.text
             }, status=response.status_code)
     
     except requests.exceptions.Timeout:
-        return JsonResponse({'error': 'Timeout - servidor FastAPI no responde'}, status=504)
-    except requests.exceptions.ConnectionError:
-        return JsonResponse({'error': 'No se puede conectar al servidor FastAPI'}, status=503)
+        logger.error(f"Timeout conectando a FastAPI en {settings.FASTAPI_URL}")
+        return JsonResponse({'error': 'Timeout - el servidor FastAPI tardó demasiado en responder (puede estar iniciando)'}, status=504)
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Error de conexión con FastAPI en {settings.FASTAPI_URL}: {e}")
+        return JsonResponse({'error': f'No se puede conectar al backend ({settings.FASTAPI_URL})'}, status=503)
     except Exception as e:
         logger.error(f"Error en count_people: {e}")
         return JsonResponse({'error': str(e)}, status=500)
@@ -154,28 +156,36 @@ def update_threshold(request):
         
         # Llamar a FastAPI
         fastapi_url = f"{settings.FASTAPI_URL}/api/v1/threshold"
+        logger.info(f"Actualizando threshold en {fastapi_url} -> {data['max_allowed']}")
         response = requests.put(
             fastapi_url,
             json={
                 'max_allowed': data['max_allowed'],
                 'establishment_id': establishment_id
             },
-            timeout=30
+            timeout=45
         )
         
         if response.status_code == 200:
             return JsonResponse(response.json())
         else:
+            logger.error(f"Error respuesta FastAPI ({response.status_code}): {response.text}")
             return JsonResponse({
-                'error': 'Error actualizando threshold',
+                'error': f'Error en FastAPI ({response.status_code})',
                 'details': response.text
             }, status=response.status_code)
     
     except json.JSONDecodeError:
         return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout actualizando threshold en {settings.FASTAPI_URL}")
+        return JsonResponse({'error': 'Timeout conectando con FastAPI (el backend puede estar iniciando)'}, status=504)
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"ConnectionError actualizando threshold en {settings.FASTAPI_URL}: {e}")
+        return JsonResponse({'error': f'No se puede conectar al backend en {settings.FASTAPI_URL}'}, status=503)
     except Exception as e:
         logger.error(f"Error en update_threshold: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': f"Error: {str(e)}"}, status=500)
 
 # ===================== CONFIGURACIÓN =====================
 
@@ -190,7 +200,8 @@ def settings_view(request):
             fastapi_url = f"{settings.FASTAPI_URL}/api/v1/threshold"
             response = requests.put(
                 fastapi_url,
-                json={'max_allowed': max_allowed, 'establishment_id': 'default'}
+                json={'max_allowed': max_allowed, 'establishment_id': 'default'},
+                timeout=45
             )
             
             if response.status_code == 200:
@@ -200,7 +211,7 @@ def settings_view(request):
                 })
             else:
                 return render(request, 'settings.html', {
-                    'error': 'Error al actualizar configuración'
+                    'error': f'Error al actualizar configuración en FastAPI ({response.status_code})'
                 })
         except Exception as e:
             return render(request, 'settings.html', {
@@ -217,19 +228,25 @@ def get_thresholds(request):
     """Obtiene los thresholds actuales desde FastAPI"""
     try:
         fastapi_url = f"{settings.FASTAPI_URL}/api/v1/thresholds"
-        response = requests.get(fastapi_url, timeout=10)
+        response = requests.get(fastapi_url, timeout=30)
         
         if response.status_code == 200:
             return JsonResponse(response.json())
         else:
-            return JsonResponse({'error': 'Error obteniendo thresholds'}, status=500)
+            logger.warning(f"FastAPI get_thresholds devolvió status {response.status_code}")
+            return JsonResponse({'thresholds': [{'establishment_id': 'default', 'max_allowed': 10}]})
     
     except Exception as e:
-        logger.error(f"Error en get_thresholds: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.warning(f"No se pudo consultar FastAPI en {settings.FASTAPI_URL} ({e}). Usando fallback aforo=10.")
+        # Retorna el valor por defecto para no romper el dashboard si el backend está en cold-start
+        return JsonResponse({'thresholds': [{'establishment_id': 'default', 'max_allowed': 10}]})
 
 # ===================== HEALTH CHECK =====================
 
 def health(request):
     """Health check endpoint"""
-    return JsonResponse({'status': 'ok', 'service': 'Django Frontend'})
+    return JsonResponse({
+        'status': 'ok',
+        'service': 'Django Frontend',
+        'fastapi_url': settings.FASTAPI_URL
+    })

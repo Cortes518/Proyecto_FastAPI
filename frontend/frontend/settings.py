@@ -108,7 +108,23 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # FastAPI Backend URL
-FASTAPI_URL = config('FASTAPI_URL', default='http://localhost:8001')
+_raw_fastapi_url = config('FASTAPI_URL', default='http://localhost:8001').strip().rstrip('/')
+
+if not _raw_fastapi_url.startswith(('http://', 'https://')):
+    # Si Render pasó solo el host, ej: "aforo-fastapi-backend" o "aforo-fastapi-backend.onrender.com"
+    if '.' not in _raw_fastapi_url and 'localhost' not in _raw_fastapi_url:
+        _raw_fastapi_url = f"{_raw_fastapi_url}.onrender.com"
+    FASTAPI_URL = f"https://{_raw_fastapi_url}"
+elif 'localhost' not in _raw_fastapi_url and '127.0.0.1' not in _raw_fastapi_url and not _raw_fastapi_url.startswith('https://'):
+    if 'onrender.com' in _raw_fastapi_url:
+        FASTAPI_URL = _raw_fastapi_url.replace('http://', 'https://')
+    elif '.' not in _raw_fastapi_url.split('://')[1].split(':')[0]:
+        _host = _raw_fastapi_url.split('://')[1].split(':')[0]
+        FASTAPI_URL = f"https://{_host}.onrender.com"
+    else:
+        FASTAPI_URL = _raw_fastapi_url
+else:
+    FASTAPI_URL = _raw_fastapi_url
 
 # Sessions
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

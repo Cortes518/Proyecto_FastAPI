@@ -13,15 +13,17 @@ sqlalchemy>=2.0.30
 # ML - YOLOv8
 ultralytics>=8.2.0
 numpy>=1.26.0
-opencv-python>=4.9.0.80
+opencv-python-headless>=4.9.0.80
 pillow>=10.3.0
 
-# Frontend Django
+# Frontend Django & Production Server
 Django>=4.2.0
 djangorestframework>=3.15.0
 django-cors-headers>=4.3.1
 python-decouple>=3.8
 daphne>=4.1.0
+gunicorn>=21.2.0
+whitenoise>=6.6.0
 
 # Testing & Development
 pytest>=8.0.0

@@ -1,0 +1,9 @@
+# Frontend Django & Production Server
+Django>=4.2.0
+djangorestframework>=3.15.0
+django-cors-headers>=4.3.1
+python-decouple>=3.8
+daphne>=4.1.0
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+requests>=2.31.0

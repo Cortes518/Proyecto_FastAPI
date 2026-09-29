@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from typing import Optional
 import sqlite3
 import json
+import os
 from datetime import datetime
 
 from backend.config import settings
@@ -81,12 +82,21 @@ model = None
 async def load_model():
     global model
     try:
+        model_dir = os.path.dirname(settings.model_path)
+        if model_dir:
+            os.makedirs(model_dir, exist_ok=True)
         logger.info(f"Cargando modelo YOLOv8-nano desde {settings.model_path}")
         model = YOLO(settings.model_path)  # Descarga automáticamente si no existe
         logger.info("✅ Modelo YOLOv8-nano cargado exitosamente")
     except Exception as e:
-        logger.error(f"❌ Error al cargar modelo: {e}")
-        raise RuntimeError(f"No se pudo cargar el modelo: {e}")
+        logger.error(f"❌ Error al cargar modelo desde {settings.model_path}: {e}")
+        try:
+            logger.info("Intentando cargar 'yolov8n.pt' directo como fallback...")
+            model = YOLO("yolov8n.pt")
+            logger.info("✅ Modelo YOLOv8-nano cargado exitosamente (fallback)")
+        except Exception as err:
+            logger.error(f"❌ Error crítico cargando fallback: {err}")
+            raise RuntimeError(f"No se pudo cargar el modelo: {e}")
 
 # ===================== DATABASE (SQLITE SIMPLE) =====================
 

@@ -1,33 +1,21 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r requirements.txt && python backend/manage.py collectstatic --noinput",
-  "framework": "fastapi",
-  "functions": {
-    "backend/main.py": {
-      "memory": 3008,
-      "maxDuration": 300
-    }
-  },
-  "rewrites": [
+  "installCommand": "pip install -r frontend/requirements.txt",
+  "buildCommand": "python frontend/manage.py collectstatic --noinput",
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/main.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/wsgi.py"
+      "src": "frontend/frontend/wsgi.py",
+      "use": "@vercel/python"
     }
   ],
-  "env": {
-    "DJANGO_SECRET_KEY": {
-      "description": "Django secret key",
-      "required": true
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/frontend/staticfiles/$1"
     },
-    "FASTAPI_ENV": "production",
-    "DEBUG": "False"
-  },
-  "regions": ["iad1", "sfo1"],
-  "buildLogs": {
-    "enabled": true
-  }
+    {
+      "src": "/(.*)",
+      "dest": "frontend/frontend/wsgi.py"
+    }
+  ]
 }

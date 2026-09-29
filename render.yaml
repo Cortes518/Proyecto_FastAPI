@@ -1,0 +1,43 @@
+services:
+  # 1. Backend FastAPI + YOLOv8
+  - type: web
+    name: aforo-fastapi-backend
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: FASTAPI_ENV
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MODEL_PATH
+        value: yolov8n.pt
+
+  # 2. Frontend Django
+  - type: web
+    name: aforo-django-frontend
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r frontend/requirements.txt && python frontend/manage.py migrate && python frontend/manage.py collectstatic --noinput"
+    startCommand: "gunicorn --chdir frontend frontend.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: FASTAPI_URL
+        fromService:
+          type: web
+          name: aforo-fastapi-backend
+          property: host
